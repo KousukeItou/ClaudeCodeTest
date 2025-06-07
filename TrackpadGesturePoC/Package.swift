@@ -10,7 +10,14 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "TrackpadGesturePoC",
-            path: "TrackpadGesturePoC/Sources"
+            path: "TrackpadGesturePoC/Sources",
+            publicHeadersPath: ".",
+            cSettings: [
+                .headerSearchPath(".")
+            ],
+            linkerSettings: [
+                .linkedFramework("MultitouchSupport", .when(platforms: [.macOS]))
+            ]
         ),
         .testTarget(
             name: "TrackpadGesturePoCTests",

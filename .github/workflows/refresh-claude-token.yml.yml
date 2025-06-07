@@ -1,50 +1,59 @@
 name: Refresh Claude API token
 
-# ─────────────────────────────────────────────────────────────
-# 55 分ごとに自動実行 ＋ 手動起動 (Actions タブ → Run workflow)
-# ─────────────────────────────────────────────────────────────
+# ────────── トリガー ──────────
 on:
   schedule:
-    - cron: '*/55 * * * *'
-  workflow_dispatch:
+    - cron: '*/55 * * * *'        # 55 分ごと（有効期限 60 分想定）
+  workflow_dispatch:              # Actions タブの Run workflow ボタン
+
+# ────────── 事前確認 ──────────
+# Settings → Secrets → Actions に下記 4 つを保存しておく
+# 1) CLAUDE_REFRESH_TOKEN      ← 一度発行したら固定
+# 2) CLAUDE_CLIENT_ID
+# 3) CLAUDE_CLIENT_SECRET
+# 4) GH_PAT_FOR_SECRETS        ← repo or secrets:write 権限付き PAT
+#    （この PAT を使って GitHub シークレットを上書きする）
+# ──────────────────────────
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-
-    # ---------------------------------------------------------
-    # グローバル環境変数
-    #   - Claude 側のリフレッシュトークン & クライアント情報
-    #   - PAT (secrets 写し替え用) を GH_TOKEN として渡す
-    # ---------------------------------------------------------
     env:
+      # Claude 側
       CLAUDE_REFRESH_TOKEN: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
       CLAUDE_CLIENT_ID:     ${{ secrets.CLAUDE_CLIENT_ID }}
       CLAUDE_CLIENT_SECRET: ${{ secrets.CLAUDE_CLIENT_SECRET }}
-      GH_TOKEN:             ${{ secrets.GH_PAT_FOR_SECRETS }}   # ← gh CLI が自動認証
+      # gh CLI 用トークン
+      GH_TOKEN:             ${{ secrets.GH_PAT_FOR_SECRETS }}
 
     steps:
-      # 1. Claude の新アクセストークンを取得
-      - name: 🔄 Get new Claude access token
-        id: refresh
+      # 1) 新しいアクセストークン取得
+      - name: 🔄 Fetch new Claude access token
+        id: claude
+        shell: bash
         run: |
-          set -eo pipefail
-          resp=$(curl -sS -X POST https://api.anthropic.com/oauth/token \
+          set -euo pipefail
+          response=$(curl -sS -X POST https://api.anthropic.com/oauth/token \
             -d grant_type=refresh_token \
             -d refresh_token="$CLAUDE_REFRESH_TOKEN" \
             -u "$CLAUDE_CLIENT_ID:$CLAUDE_CLIENT_SECRET")
-          NEW_TOKEN=$(echo "$resp" | jq -r .access_token)
-          echo "::add-mask::$NEW_TOKEN"            # マスクしてログに漏らさない
-          echo "token=$NEW_TOKEN" >> "$GITHUB_OUTPUT"
 
-      # 2. GitHub シークレットを上書き
-      - name: 🚀 Update GitHub secret CLAUDE_API_TOKEN
+          ACCESS_TOKEN=$(echo "$response" | jq -r '.access_token')
+          EXPIRES_IN=$(echo "$response" | jq -r '.expires_in')   # 例: 3600
+          # 失効時刻 (ISO8601) を算出
+          EXPIRES_AT=$(date -u -d "@$(( $(date +%s) + EXPIRES_IN ))" '+%Y-%m-%dT%H:%M:%SZ')
+
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "access=$ACCESS_TOKEN" >>"$GITHUB_OUTPUT"
+          echo "expires=$EXPIRES_AT"  >>"$GITHUB_OUTPUT"
+
+      # 2) リポジトリシークレットを書き換え
+      - name: 🚀 Update repo secrets
         env:
-          NEW_TOKEN: ${{ steps.refresh.outputs.token }}
+          ACCESS:  ${{ steps.claude.outputs.access }}
+          EXPIRES: ${{ steps.claude.outputs.expires }}
         run: |
-          set -eo pipefail
-          gh secret set CLAUDE_API_TOKEN \
-            --repo "$GITHUB_REPOSITORY" \
-            --app actions \
-            --body "$NEW_TOKEN"
-          echo "✅ CLAUDE_API_TOKEN updated successfully"
+          set -euo pipefail
+          gh secret set CLAUDE_ACCESS_TOKEN --app actions --body "$ACCESS"
+          gh secret set CLAUDE_EXPIRES_AT   --app actions --body "$EXPIRES"
+          echo "✅ Secrets updated: CLAUDE_ACCESS_TOKEN / CLAUDE_EXPIRES_AT"
