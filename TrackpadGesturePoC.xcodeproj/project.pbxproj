@@ -37,6 +37,7 @@
 		D400001100000000 /* MultitouchBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MultitouchBridge.m; sourceTree = "<group>"; };
 		D400001200000000 /* MultitouchBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MultitouchBridge.h; sourceTree = "<group>"; };
 		D400001300000000 /* TrackpadGesturePoCTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackpadGesturePoCTests.swift; sourceTree = "<group>"; };
+		D400002000000000 /* TrackpadGesturePoC-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TrackpadGesturePoC-Bridging-Header.h"; sourceTree = "<group>"; };
 		D400001600000000 /* TrackpadGesturePoCTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackpadGesturePoCTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -84,6 +85,7 @@
 				D400000F00000000 /* GestureListener.swift */,
 				D400001100000000 /* MultitouchBridge.m */,
 				D400001200000000 /* MultitouchBridge.h */,
+				D400002000000000 /* TrackpadGesturePoC-Bridging-Header.h */,
 				D400000400000000 /* Assets.xcassets */,
 				D400000900000000 /* TrackpadGesturePoC.entitlements */,
 				D400000600000000 /* Preview Content */,
@@ -114,7 +116,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D400000A00000000 /* Build configuration list for PBXNativeTarget "TrackpadGesturePoC" */;
 			buildPhases = (
-				D4FFFFF900000000 /* Sources */,
+				D4FFFFF700000000 /* Sources */,
 				D4FFFFFA00000000 /* Frameworks */,
 				D4FFFFFB00000000 /* Resources */,
 			);
@@ -203,7 +205,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		D4FFFFF900000000 /* Sources */ = {
+		D4FFFFF700000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -372,6 +374,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.TrackpadGesturePoC;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "TrackpadGesturePoC/TrackpadGesturePoC-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -397,6 +400,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.TrackpadGesturePoC;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "TrackpadGesturePoC/TrackpadGesturePoC-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
