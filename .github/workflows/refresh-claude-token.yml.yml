@@ -1,0 +1,44 @@
+name: Refresh Claude API token
+on:
+  # 55 分ごとに実行（有効期限 60 min を想定）
+  schedule:
+    - cron:  '*/55 * * * *'
+  # 手動実行も可
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      # GitHub Secrets に用意しておく ────────────────────
+      CLAUDE_REFRESH_TOKEN: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+      CLAUDE_CLIENT_ID:     ${{ secrets.CLAUDE_CLIENT_ID }}
+      CLAUDE_CLIENT_SECRET: ${{ secrets.CLAUDE_CLIENT_SECRET }}
+      #   ここまで
+    steps:
+      - name: Check out (必要なら)
+        uses: actions/checkout@v4
+
+      - name: 🔄 Claude のアクセストークンを再発行
+        id: refresh
+        run: |
+          new_token=$(curl -s -X POST https://api.anthropic.com/oauth/token \
+            -d grant_type=refresh_token \
+            -d refresh_token=$CLAUDE_REFRESH_TOKEN \
+            -u "$CLAUDE_CLIENT_ID:$CLAUDE_CLIENT_SECRET" \
+            | jq -r .access_token)
+          echo "token=$new_token" >> "$GITHUB_OUTPUT"
+
+      # --------------------------------------------------------------
+      # ↓ ここが “GitHub Secrets を上書き” する部分
+      #    gh CLI を使うのが一番ラク
+      # --------------------------------------------------------------
+      - name: 🚀 GitHub シークレットを上書き
+        # gh CLI は 'GITHUB_TOKEN' ではシークレット更新権限がないため、
+        # repo 全権 (または fine-grained で secrets:write) の PAT を別途用意
+        env:
+          GH_PAT_FOR_SECRETS: ${{ secrets.GH_PAT_FOR_SECRETS }}
+          NEW_TOKEN: ${{ steps.refresh.outputs.token }}
+        run: |
+          echo "$GH_PAT_FOR_SECRETS" | gh auth login --with-token
+          printf '%s' "$NEW_TOKEN" | gh secret set CLAUDE_API_TOKEN -R "$GITHUB_REPOSITORY" --app actions
