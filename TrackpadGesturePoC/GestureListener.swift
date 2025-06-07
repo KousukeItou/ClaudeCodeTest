@@ -71,7 +71,7 @@ class GestureListener: ObservableObject {
         
         MultitouchBridge.shared().startListening { [weak self] fingersArray in
             let fingers = fingersArray.compactMap { value -> MultitouchFingerData? in
-                var fingerData = MultitouchFingerData()
+                var fingerData = MultitouchFingerData(identifier: 0, x: 0, y: 0, pressure: 0, size: 0)
                 value.getValue(&fingerData)
                 return fingerData
             }
